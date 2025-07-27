@@ -1,0 +1,30 @@
+{
+	"name": "mh-digimenu",
+	"build": {
+	  "dockerfile": "Dockerfile",
+	  "context": ".."
+	},
+	"customizations": {
+		// Configure properties specific to VS Code.
+		"vscode": {
+			// Add the IDs of extensions you want installed when the container is created.
+			"extensions": [
+				"mikestead.dotenv",
+				"astro-build.astro-vscode",
+				"matthewpi.caddyfile-support",
+				"ms-azuretools.vscode-docker",
+				"unifiedjs.vscode-mdx",
+				"esbenp.prettier-vscode",
+				"bradlc.vscode-tailwindcss",
+				"wdhongtw.gpg-indicator",
+				"eamodio.gitlens"
+			]
+		}
+	},
+	"forwardPorts": [4321, 3000],
+	"postCreateCommand": "",
+	"remoteUser": "node",
+	"mounts": [
+		"source=${localEnv:HOME}/.ssh,target=/home/node/.ssh,type=bind,consistency=cached"
+	]
+}

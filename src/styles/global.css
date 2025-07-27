@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+@config '../../tailwind.config.ts';
+
+:root {
+  --text-color-default: #000;
+  --text-color-muted: #6f6f6f;
+  --primary-color: #5a0b0b;
+  --secondary-color: #deaa10;
+  --bg-color: #dfdfdf;
+}
