@@ -1,50 +1,178 @@
 ---
 import '../styles/global.css'
+import menuData from '../data/menu.json'
 ---
 
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Digimenu</title>
+		<title>Manheim Lions Digital Menu</title>
 	</head>
-	<body>
-		<div>
-			<h1 class='text-center font-[var(--font-heading)] text-6xl mt-8 mx-auto text-[var(--color-text-default)]'>Manheim Lions Menu</h1>
+	<body class="min-h-screen bg-slate-100 dark:bg-slate-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+		<div class="pixel-shift min-h-screen flex flex-col">
+			<!-- Header -->
+			<header class="bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 text-white py-8 px-8 shadow-lg transition-colors duration-300">
+				<div class="max-w-4xl mx-auto text-center">
+					<div class="flex items-center justify-center gap-6 mb-6">
+						<img src="/CentennialLogo.png" alt="Manheim Lions Club" class="h-20 w-auto" />
+						<div>
+							<h1 class="text-4xl font-bold tracking-tight">Manheim Lions Club</h1>
+							<p class="text-orange-400 dark:text-red-500">bruh</p>
+						</div>
+					</div>
+				</div>
+			</header>			<!-- Main Content -->
+			<main class="flex-1 py-12 px-8">
+				<div class="max-w-4xl mx-auto">
+					<!-- Food Section -->
+					<section class="mb-16">
+						<h2 class="text-4xl font-bold text-center text-gray-800 dark:text-white mb-8 border-b-2 border-blue-300 dark:border-blue-300 pb-4 transition-colors duration-300">
+							🍴 Food Menu
+						</h2>
+						<div class="space-y-6">
+							{menuData.food.map((item) => (
+								<div class="menu-item-card bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-xl p-6 border-l-4 border-blue-500 dark:border-blue-300 transition-colors duration-300">
+									<div class="flex justify-between items-center">
+										<div>
+											<h3 class="text-2xl font-bold text-gray-800 dark:text-white">{item.name}</h3>
+											<p class="text-lg text-gray-600 dark:text-gray-200 mt-1">{item.description}</p>
+										</div>
+										<span class="text-3xl font-bold text-blue-600 dark:text-blue-300">{item.price}</span>
+									</div>
+								</div>
+							))}
+						</div>
+					</section>
+
+					<!-- Beverages Section -->
+					<section class="mb-16">
+						<h2 class="text-4xl font-bold text-center text-gray-800 dark:text-white mb-8 border-b-2 border-green-300 dark:border-green-300 pb-4 transition-colors duration-300">
+							🥤 Beverages
+						</h2>
+						<div class="space-y-6">
+							{menuData.beverages.map((item) => (
+								<div class="menu-item-card bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-xl p-6 border-l-4 border-green-500 dark:border-green-300 transition-colors duration-300">
+									<div class="flex justify-between items-center">
+										<div>
+											<h3 class="text-2xl font-bold text-gray-800 dark:text-white">{item.name}</h3>
+											<p class="text-lg text-gray-600 dark:text-gray-200 mt-1">{item.description}</p>
+										</div>
+										<span class="text-3xl font-bold text-blue-600 dark:text-blue-300">{item.price}</span>
+									</div>
+								</div>
+							))}
+						</div>
+					</section>
+
+					<!-- Payment Info -->
+					<section class="text-center mb-12">
+						<div class="bg-gray-100 dark:bg-slate-700 border-2 border-gray-300 dark:border-slate-500 rounded-lg shadow-md dark:shadow-xl p-8 transition-colors duration-300">
+							<h3 class="text-3xl font-bold mb-4 text-gray-800 dark:text-white">💳 Payment Options</h3>
+							<p class="text-xl mb-4 text-gray-700 dark:text-gray-100">We accept cash and card payments!</p>
+							<div class="flex justify-center space-x-8 text-lg">
+								<span class="flex items-center bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100 px-4 py-2 rounded-lg font-medium">💵 Cash</span>
+								<span class="flex items-center bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 px-4 py-2 rounded-lg font-medium">💳 Credit/Debit Cards</span>
+							</div>
+						</div>
+					</section>
+
+					<!-- Learn More Section -->
+					<section class="text-center mb-8">
+						<h3 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white">What is a Lion?</h3>
+						<div class="bg-gray-200 dark:bg-slate-700 rounded-lg p-8 transition-colors duration-300">
+							<div class="bg-gray-400 dark:bg-slate-600 rounded-lg flex items-center justify-center h-64 transition-colors duration-300">
+								<div class="text-center text-gray-600 dark:text-gray-200">
+									<svg class="w-16 h-16 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
+										<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+									</svg>
+									<p class="text-lg font-medium">Video Coming Soon</p>
+									<p class="text-sm">Placeholder for auto-playing video</p>
+								</div>
+							</div>
+						</div>
+					</section>
+				</div>
+			</main>
+
+			<!-- Footer -->
+			<footer class="bg-gray-700 dark:bg-slate-900 text-white py-6 px-8 transition-colors duration-300">
+				<div class="max-w-4xl mx-auto text-center">
+					<p class="text-lg font-medium">Thank you for supporting the Manheim Lions Club!</p>
+					<p class="text-gray-300 dark:text-gray-400 mt-2">Serving our community since 1925</p>
+					<p class="text-gray-300 dark:text-gray-400 mt-1">Visit us at manheimlions.org</p>
+
+					<!-- Hidden theme toggle for testing - click bottom right corner -->
+					<button
+						id="theme-toggle"
+						class="fixed bottom-2 right-2 w-8 h-8 opacity-0 hover:opacity-20 transition-opacity duration-300 bg-transparent border-none cursor-pointer z-50"
+						title="Theme Toggle (Testing Only)"
+						aria-label="Toggle theme for testing">
+					</button>
+				</div>
+			</footer>
 		</div>
-		<br />
-		<div>
-			<h2 class='text-center font-[var(--font-heading)] text-4xl mt-8 mx-auto text-[var(--color-text-default)]'>Food</h2>
-			<ul class="text-center mt-8 gap-2 text-2xl">
-				<li>
-					Cold or Grilled Ham & Cheese Sandwhich - $5.00
-				</li>
-				<li>
-					Grilled Cheese - $4.00
-				</li>
-				<li>
-					Tomato Soup - $4.00
-				</li>
-			</ul>
-		</div>
-		<div>
-			<h2 class='text-center font-[var(--font-heading)] text-4xl mt-8 mx-auto text-[var(--color-text-default)]'>Beverages</h2>
-			<ul class='text-center mt-8 gap-2 text-2xl'>
-				<li>
-					Soda (Coke products) - $1.00
-				</li>
-				<li>
-					Bottled Water - $1.00
-				</li>
-				<li>
-					Capri Sun - $1.00
-				</li>
-			</ul>
-		</div>
-		<div class="text-center mt-8">
-			<p>Pay with cash or card!</p>
-		</div>
+
+		<script>
+			// Auto dark mode based on time
+			let manualOverride = false;
+
+			function updateTheme() {
+				// Skip automatic updates if manual override is active
+				if (manualOverride) return;
+
+				const now = new Date();
+				const hour = now.getHours();
+
+				// Dark mode from 7 PM (19:00) to 7 AM (07:00)
+				const isDarkTime = hour >= 19 || hour < 7;
+
+				if (isDarkTime) {
+					document.documentElement.classList.add('dark');
+				} else {
+					document.documentElement.classList.remove('dark');
+				}
+			}
+
+			// Manual theme toggle for testing
+			function toggleTheme() {
+				const isDark = document.documentElement.classList.contains('dark');
+				if (isDark) {
+					document.documentElement.classList.remove('dark');
+				} else {
+					document.documentElement.classList.add('dark');
+				}
+
+				// Enable manual override for 5 minutes
+				manualOverride = true;
+				setTimeout(() => {
+					manualOverride = false;
+					updateTheme(); // Resume automatic switching
+				}, 5 * 60 * 1000); // 5 minutes
+			}
+
+			// Update theme immediately
+			updateTheme();
+
+			// Check every minute for theme changes
+			setInterval(updateTheme, 60000);
+
+			// Also check when page becomes visible again (in case time changed while hidden)
+			document.addEventListener('visibilitychange', () => {
+				if (!document.hidden) {
+					updateTheme();
+				}
+			});
+
+			// Add click handler for theme toggle
+			document.addEventListener('DOMContentLoaded', () => {
+				const toggleButton = document.getElementById('theme-toggle');
+				if (toggleButton) {
+					toggleButton.addEventListener('click', toggleTheme);
+				}
+			});
+		</script>
 	</body>
 </html>

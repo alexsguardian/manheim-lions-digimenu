@@ -13,9 +13,12 @@ export default {
         default: 'var(--color-text-default)',
         muted: 'var(--color-text-muted)',
         bg: 'var(--bg-color)',
+        // Additional colors from mjs config
+        text: '#000000',
+        background: '#ffffff',
       },
       fontFamily: {
-        sans: ['var(--font-sans, ui-sans-serif)', ...defaultTheme.fontFamily.sans],
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif'],
         serif: ['var(--font-serif, ui-serif)', ...defaultTheme.fontFamily.serif],
         heading: ['var(--font-heading, ui-sans-serif)', ...defaultTheme.fontFamily.sans],
       },
