@@ -166,7 +166,7 @@ create_service_user() {
 
 # Project deployment
 deploy_project() {
-    log "Deploying project to $PROJECT_DIR (Raspberry Pi ARM64 optimized)..."
+    log "Deploying project to $PROJECT_DIR (using pre-built dist.tar)..."
 
     # Clean existing directory
     if [[ -d "$PROJECT_DIR" ]]; then
@@ -174,38 +174,81 @@ deploy_project() {
         sudo mv "$PROJECT_DIR" "${PROJECT_DIR}.backup.$(date +%s)"
     fi
 
-    # Clone repository
-    sudo git clone "$REPO_URL" "$PROJECT_DIR"
+    # Create project directory
+    sudo mkdir -p "$PROJECT_DIR"
 
-    # Set ownership
-    sudo chown -R "$SERVICE_USER:$SERVICE_USER" "$PROJECT_DIR"
+    # Check for pre-built dist.tar file
+    local dist_tar="/opt/dist.tar"
+    if [[ -f "$dist_tar" ]]; then
+        log "Found pre-built dist.tar file, extracting..."
 
-    log "System architecture: $(uname -m)"
-    log "Node.js version: $(node --version)"
-    log "npm version: $(npm --version)"
+        # Extract the pre-built distribution
+        sudo tar -xf "$dist_tar" -C "$PROJECT_DIR" || error_exit "Failed to extract dist.tar"
 
-    # ARM64/Raspberry Pi optimized installation
-    log "Installing dependencies optimized for ARM64..."
-    sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install"
-
-    log "Building application for ARM64..."
-    if sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build"; then
-        log_success "Build completed successfully!"
-    else
-        log_error "Build failed. Attempting ARM64-specific fixes..."
-
-        # Clean and retry with explicit ARM64 optimization
-        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && rm -rf node_modules package-lock.json"
-        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install --platform=linux --arch=arm64"
-
-        if sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build"; then
-            log_success "Build succeeded after ARM64 optimization!"
+        # Verify extraction was successful
+        if [[ -d "$PROJECT_DIR/dist" ]] && [[ -f "$PROJECT_DIR/dist/index.html" ]]; then
+            log_success "Pre-built distribution extracted successfully!"
         else
-            error_exit "Build failed even with ARM64 optimizations. Please check the project compatibility with ARM64 architecture."
+            error_exit "dist.tar extraction failed - no valid dist folder found"
+        fi
+
+        # Clone repository for configuration files (but skip building)
+        log "Cloning repository for configuration files..."
+        local temp_repo="/tmp/menu-repo"
+        if [[ -d "$temp_repo" ]]; then
+            sudo rm -rf "$temp_repo"
+        fi
+        sudo git clone "$REPO_URL" "$temp_repo"
+
+        # Copy configuration files if they exist
+        if [[ -f "$temp_repo/package.json" ]]; then
+            sudo cp "$temp_repo/package.json" "$PROJECT_DIR/"
+        fi
+        if [[ -f "$temp_repo/astro.config.ts" ]]; then
+            sudo cp "$temp_repo/astro.config.ts" "$PROJECT_DIR/"
+        fi
+        if [[ -f "$temp_repo/astro.config.js" ]]; then
+            sudo cp "$temp_repo/astro.config.js" "$PROJECT_DIR/"
+        fi
+
+        # Clean up temp repo
+        sudo rm -rf "$temp_repo"
+
+        log "Pre-built deployment completed - no build required on Pi!"
+
+    else
+        log_warning "No pre-built dist.tar found at $dist_tar"
+        log "Falling back to building from source..."
+
+        # Clone repository
+        sudo git clone "$REPO_URL" "$PROJECT_DIR"
+
+        log "System architecture: $(uname -m)"
+        log "Node.js version: $(node --version)"
+        log "npm version: $(npm --version)"
+
+        # Try building from source (fallback)
+        log "Installing dependencies..."
+        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install"
+
+        log "Building application..."
+        if sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build"; then
+            log_success "Source build completed successfully!"
+        else
+            error_exit "Build from source failed. Please provide a pre-built dist.tar file in /opt/ or fix ARM64 compatibility issues."
         fi
     fi
 
-    log_success "Project deployed and built successfully"
+    # Set proper ownership
+    sudo chown -R "$SERVICE_USER:$SERVICE_USER" "$PROJECT_DIR"
+
+    # Ensure dist directory has correct permissions
+    if [[ -d "$PROJECT_DIR/dist" ]]; then
+        sudo chmod -R 755 "$PROJECT_DIR/dist"
+        log_success "Project deployed successfully"
+    else
+        error_exit "No dist directory found after deployment"
+    fi
 }
 
 # Web server configuration
