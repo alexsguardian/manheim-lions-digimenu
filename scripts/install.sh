@@ -206,21 +206,46 @@ deploy_project() {
     log "Building application..."
     if ! sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && timeout 300 npm run build"; then
         log_error "Build failed. This might be due to architecture incompatibility."
-        log "Attempting to rebuild native modules..."
 
-        # Try to rebuild native modules for current architecture
-        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm rebuild" || true
+        # Check for specific Rollup ARM64 issue
+        if [[ "$arch" == "aarch64" ]] || [[ "$arch" == *"arm"* ]]; then
+            log "Detected ARM architecture - attempting Rollup ARM64 fix..."
+            log "Removing package-lock.json and node_modules (npm bug workaround)..."
 
-        # Try build again with more verbose output
-        log "Retrying build with verbose output..."
-        if ! sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build -- --verbose"; then
-            log_error "Build failed even after rebuild attempt."
-            log_error "This may be due to incompatible binary dependencies on this architecture ($arch)."
+            # Remove package-lock.json and node_modules
+            sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && rm -f package-lock.json"
+            sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && rm -rf node_modules"
 
-            # Try a different approach - install without optional dependencies
-            log "Attempting install without optional dependencies..."
-            sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm ci --only=production --no-optional"
-            sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build" || error_exit "All build attempts failed"
+            # Reinstall with npm install (not npm ci) to avoid lock file issues
+            log "Reinstalling dependencies without lock file..."
+            sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install --only=production"
+
+            # Try build again
+            log "Retrying build after ARM64 fix..."
+            if ! sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build"; then
+                log_error "Build still failed after ARM64 fix. Trying without optional dependencies..."
+
+                # Last resort: reinstall without optional dependencies
+                sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && rm -rf node_modules"
+                sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install --only=production --no-optional"
+                sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build" || error_exit "All build attempts failed"
+            fi
+        else
+            log "Attempting to rebuild native modules..."
+            # Try to rebuild native modules for current architecture
+            sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm rebuild" || true
+
+            # Try build again with more verbose output
+            log "Retrying build with verbose output..."
+            if ! sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build -- --verbose"; then
+                log_error "Build failed even after rebuild attempt."
+                log_error "This may be due to incompatible binary dependencies on this architecture ($arch)."
+
+                # Try a different approach - install without optional dependencies
+                log "Attempting install without optional dependencies..."
+                sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm ci --only=production --no-optional"
+                sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build" || error_exit "All build attempts failed"
+            fi
         fi
     fi
 
