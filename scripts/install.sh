@@ -166,7 +166,7 @@ create_service_user() {
 
 # Project deployment
 deploy_project() {
-    log "Deploying project to $PROJECT_DIR..."
+    log "Deploying project to $PROJECT_DIR (Raspberry Pi ARM64 optimized)..."
 
     # Clean existing directory
     if [[ -d "$PROJECT_DIR" ]]; then
@@ -180,157 +180,32 @@ deploy_project() {
     # Set ownership
     sudo chown -R "$SERVICE_USER:$SERVICE_USER" "$PROJECT_DIR"
 
-    # Check architecture and Node.js compatibility
-    local arch
-    arch=$(uname -m)
-    log "System architecture: $arch"
-
-    # Display Node.js and npm versions for debugging
+    log "System architecture: $(uname -m)"
     log "Node.js version: $(node --version)"
     log "npm version: $(npm --version)"
 
-    # Install dependencies with better error handling
-    log "Installing npm dependencies..."
-    if ! sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm ci --only=production"; then
-        log_error "Failed to install npm dependencies"
-        log "Trying alternative installation method..."
-        # Try with legacy peer deps flag in case of dependency conflicts
-        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install --only=production --legacy-peer-deps" || error_exit "npm install failed"
-    fi
+    # ARM64/Raspberry Pi optimized installation
+    log "Installing dependencies optimized for ARM64..."
+    sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install"
 
-    # Clear npm cache to avoid architecture issues
-    log "Clearing npm cache..."
-    sudo -u "$SERVICE_USER" npm cache clean --force
+    log "Building application for ARM64..."
+    if sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build"; then
+        log_success "Build completed successfully!"
+    else
+        log_error "Build failed. Attempting ARM64-specific fixes..."
 
-    # Build application with enhanced error handling
-    log "Building application..."
-    if ! sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && timeout 300 npm run build"; then
-        log_error "Build failed. This might be due to architecture incompatibility."
+        # Clean and retry with explicit ARM64 optimization
+        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && rm -rf node_modules package-lock.json"
+        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install --platform=linux --arch=arm64"
 
-        # Check for specific Rollup ARM64 issue
-        if [[ "$arch" == "aarch64" ]] || [[ "$arch" == *"arm"* ]]; then
-            log "Detected ARM architecture - attempting comprehensive ARM64 fixes..."
-
-            # Method 1: Try installing dev dependencies (Rollup might be in devDependencies)
-            log "Method 1: Installing all dependencies including dev dependencies..."
-            sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && rm -rf node_modules package-lock.json"
-            sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install"
-
-            log "Retrying build with dev dependencies..."
-            if sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build"; then
-                log_success "Build succeeded with dev dependencies!"
-            else
-                log_error "Method 1 failed. Trying Method 2..."
-
-                # Method 2: Force install the specific Rollup ARM64 module
-                log "Method 2: Manually installing Rollup ARM64 module..."
-                sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install @rollup/rollup-linux-arm64-gnu --save-optional" || true
-
-                log "Retrying build after manual Rollup install..."
-                if sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build"; then
-                    log_success "Build succeeded after manual Rollup install!"
-                else
-                    log_error "Method 2 failed. Trying Method 3..."
-
-                    # Method 3: Use npm's force option and rebuild
-                    log "Method 3: Force reinstall with rebuild..."
-                    sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && rm -rf node_modules package-lock.json"
-                    sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install --force"
-                    sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm rebuild" || true
-
-                    log "Retrying build after force install and rebuild..."
-                    if sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build"; then
-                        log_success "Build succeeded after force install!"
-                    else
-                        log_error "Method 3 failed. Trying Method 4..."
-
-                        # Method 4: Try with Node.js 18 LTS (more stable on ARM64)
-                        log "Method 4: Checking if Node.js version is the issue..."
-                        log "Current Node.js version: $(node --version)"
-                        log "Attempting to install Node.js 18 LTS for better ARM64 compatibility..."
-
-                        # Install Node.js 18 LTS
-                        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash - || true
-                        sudo apt-get install -y nodejs || true
-
-                        # Verify new version
-                        local new_node_version
-                        new_node_version=$(node --version)
-                        log "New Node.js version: $new_node_version"
-
-                        # Clean install with Node 18
-                        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && rm -rf node_modules package-lock.json"
-                        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install"
-
-                        log "Attempting build with Node.js 18..."
-                        if sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build"; then
-                            log_success "Build succeeded with Node.js 18!"
-                        else
-                            log_error "Method 4 failed. Trying Method 5..."
-
-                            # Method 5: Try building with static generation disabled
-                            log "Method 5: Attempting build with static generation modifications..."
-
-                            # Check if astro.config exists and try to modify it for ARM64
-                            if [[ -f "$PROJECT_DIR/astro.config.ts" ]] || [[ -f "$PROJECT_DIR/astro.config.js" ]]; then
-                                log "Found Astro config, attempting build optimization for ARM64..."
-
-                                # Create a temporary build script that might bypass the issue
-                                sudo -u "$SERVICE_USER" tee "$PROJECT_DIR/build-arm64.js" > /dev/null <<'EOF'
-const { spawn } = require('child_process');
-const path = require('path');
-
-// Try building with different optimizations
-const buildProcess = spawn('npx', ['astro', 'build', '--mode', 'production'], {
-    cwd: process.cwd(),
-    stdio: 'inherit',
-    env: {
-        ...process.env,
-        NODE_OPTIONS: '--max-old-space-size=2048',
-        ASTRO_TELEMETRY_DISABLED: '1'
-    }
-});
-
-buildProcess.on('close', (code) => {
-    process.exit(code);
-});
-EOF
-
-                                sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && node build-arm64.js"
-
-                                if [[ -d "$PROJECT_DIR/dist" ]] && [[ -f "$PROJECT_DIR/dist/index.html" ]]; then
-                                    log_success "Build succeeded with custom ARM64 build script!"
-                                else
-                                    log_error "Custom build also failed."
-                                    error_exit "All ARM64 build methods failed. This ARM64 system may not be compatible with the current Astro/Node.js setup. Consider: 1) Using a pre-built static version, 2) Building on a different architecture and copying files, or 3) Using a different Node.js version."
-                                fi
-                            else
-                                error_exit "No Astro config found and all build methods failed."
-                            fi
-                        fi
-                    fi
-                fi
-            fi
+        if sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build"; then
+            log_success "Build succeeded after ARM64 optimization!"
         else
-            log "Attempting to rebuild native modules..."
-            # Try to rebuild native modules for current architecture
-            sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm rebuild" || true
-
-            # Try build again with more verbose output
-            log "Retrying build with verbose output..."
-            if ! sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build -- --verbose"; then
-                log_error "Build failed even after rebuild attempt."
-                log_error "This may be due to incompatible binary dependencies on this architecture ($arch)."
-
-                # Try a different approach - install without optional dependencies
-                log "Attempting install without optional dependencies..."
-                sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm ci --only=production --no-optional"
-                sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build" || error_exit "All build attempts failed"
-            fi
+            error_exit "Build failed even with ARM64 optimizations. Please check the project compatibility with ARM64 architecture."
         fi
     fi
 
-    log_success "Project deployed and built"
+    log_success "Project deployed and built successfully"
 }
 
 # Web server configuration
