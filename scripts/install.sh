@@ -351,6 +351,7 @@ WantedBy=graphical.target
 EOF
 
     # Create the actual service script
+    sudo mkdir -p "$PROJECT_DIR/scripts"
     sudo tee "$PROJECT_DIR/scripts/menu-display.sh" > /dev/null <<'EOF'
 #!/bin/bash
 
