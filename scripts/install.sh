@@ -11,7 +11,7 @@ readonly PROJECT_NAME="manheim-lions-menu"
 readonly PROJECT_DIR="/opt/${PROJECT_NAME}"
 readonly SERVICE_USER="menudisplay"
 readonly REPO_URL="https://github.com/alexsguardian/manheim-lions-digimenu.git"
-readonly LOG_FILE="/var/log/menu-install.log"
+readonly LOG_FILE="/opt/menu-install.log"
 
 # Colors for output
 readonly RED='\033[0;31m'
