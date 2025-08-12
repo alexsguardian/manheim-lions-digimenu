@@ -106,20 +106,44 @@ install_system_packages() {
 install_nodejs() {
     log "Installing Node.js LTS..."
 
+    # Detect architecture
+    local arch
+    arch=$(uname -m)
+    log "Detected architecture: $arch"
+
     # Remove any existing Node.js
     sudo apt-get remove -y -qq nodejs npm || true
+    sudo apt-get autoremove -y -qq || true
 
-    # Install from NodeSource
-    curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-    sudo apt-get install -y -qq nodejs
+    # Install from NodeSource with architecture awareness
+    log "Downloading and installing Node.js from NodeSource..."
+    if ! curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -; then
+        log_error "Failed to setup NodeSource repository"
+
+        # Fallback: try installing from default repositories
+        log "Falling back to default repository Node.js..."
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq nodejs npm
+    else
+        sudo apt-get install -y -qq nodejs
+    fi
 
     # Verify installation
     local node_version
     local npm_version
-    node_version=$(node --version)
-    npm_version=$(npm --version)
+    if ! node_version=$(node --version 2>/dev/null); then
+        error_exit "Node.js installation failed - node command not found"
+    fi
+
+    if ! npm_version=$(npm --version 2>/dev/null); then
+        error_exit "npm installation failed - npm command not found"
+    fi
 
     log_success "Node.js $node_version and npm $npm_version installed"
+
+    # Update npm to latest compatible version
+    log "Updating npm to latest version..."
+    sudo npm install -g npm@latest || log_warning "npm update failed, continuing with current version"
 }
 
 # User management
@@ -156,12 +180,49 @@ deploy_project() {
     # Set ownership
     sudo chown -R "$SERVICE_USER:$SERVICE_USER" "$PROJECT_DIR"
 
-    # Install dependencies and build
-    log "Installing npm dependencies..."
-    sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm ci --only=production"
+    # Check architecture and Node.js compatibility
+    local arch
+    arch=$(uname -m)
+    log "System architecture: $arch"
 
+    # Display Node.js and npm versions for debugging
+    log "Node.js version: $(node --version)"
+    log "npm version: $(npm --version)"
+
+    # Install dependencies with better error handling
+    log "Installing npm dependencies..."
+    if ! sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm ci --only=production"; then
+        log_error "Failed to install npm dependencies"
+        log "Trying alternative installation method..."
+        # Try with legacy peer deps flag in case of dependency conflicts
+        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install --only=production --legacy-peer-deps" || error_exit "npm install failed"
+    fi
+
+    # Clear npm cache to avoid architecture issues
+    log "Clearing npm cache..."
+    sudo -u "$SERVICE_USER" npm cache clean --force
+
+    # Build application with enhanced error handling
     log "Building application..."
-    sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build"
+    if ! sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && timeout 300 npm run build"; then
+        log_error "Build failed. This might be due to architecture incompatibility."
+        log "Attempting to rebuild native modules..."
+
+        # Try to rebuild native modules for current architecture
+        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm rebuild" || true
+
+        # Try build again with more verbose output
+        log "Retrying build with verbose output..."
+        if ! sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build -- --verbose"; then
+            log_error "Build failed even after rebuild attempt."
+            log_error "This may be due to incompatible binary dependencies on this architecture ($arch)."
+
+            # Try a different approach - install without optional dependencies
+            log "Attempting install without optional dependencies..."
+            sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm ci --only=production --no-optional"
+            sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build" || error_exit "All build attempts failed"
+        fi
+    fi
 
     log_success "Project deployed and built"
 }
