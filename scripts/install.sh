@@ -102,6 +102,33 @@ install_system_packages() {
     log_success "System packages installed"
 }
 
+# Minimal package installation (for pre-built deployments)
+install_minimal_packages() {
+    log "Updating package repositories..."
+    sudo apt-get update -qq
+
+    log "Upgrading system packages..."
+    sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq
+
+    local packages=(
+        "git"
+        "curl"
+        "nginx"
+        "xorg"
+        "openbox"
+        "lightdm"
+        "x11-xserver-utils"
+        "xinit"
+        "unclutter"
+        "chromium-browser"
+    )
+
+    log "Installing minimal packages for pre-built deployment: ${packages[*]}"
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${packages[@]}"
+
+    log_success "Minimal packages installed (no Node.js/build tools)"
+}
+
 # Node.js installation
 install_nodejs() {
     log "Installing Node.js LTS..."
@@ -192,13 +219,16 @@ deploy_project() {
             error_exit "dist.tar extraction failed - no valid dist folder found"
         fi
 
-        # Clone repository for configuration files (but skip building)
-        log "Cloning repository for configuration files..."
+        # Clone repository for configuration and script files (but skip building)
+        log "Cloning repository for configuration and script files..."
         local temp_repo="/tmp/menu-repo"
         if [[ -d "$temp_repo" ]]; then
             sudo rm -rf "$temp_repo"
         fi
         sudo git clone "$REPO_URL" "$temp_repo"
+
+        # Copy all needed files from repository
+        log "Copying repository files to project directory..."
 
         # Copy configuration files if they exist
         if [[ -f "$temp_repo/package.json" ]]; then
@@ -209,6 +239,23 @@ deploy_project() {
         fi
         if [[ -f "$temp_repo/astro.config.js" ]]; then
             sudo cp "$temp_repo/astro.config.js" "$PROJECT_DIR/"
+        fi
+        if [[ -f "$temp_repo/README.md" ]]; then
+            sudo cp "$temp_repo/README.md" "$PROJECT_DIR/"
+        fi
+
+        # Copy scripts directory if it exists in the repo
+        if [[ -d "$temp_repo/scripts" ]]; then
+            sudo cp -r "$temp_repo/scripts" "$PROJECT_DIR/"
+            log "Copied scripts directory from repository"
+        fi
+
+        # Copy any other important files
+        if [[ -f "$temp_repo/tailwind.config.ts" ]]; then
+            sudo cp "$temp_repo/tailwind.config.ts" "$PROJECT_DIR/"
+        fi
+        if [[ -f "$temp_repo/tailwind.config.mjs" ]]; then
+            sudo cp "$temp_repo/tailwind.config.mjs" "$PROJECT_DIR/"
         fi
 
         # Clean up temp repo
@@ -578,8 +625,24 @@ main() {
     log "Starting installation process..."
 
     check_privileges
-    install_system_packages
-    install_nodejs
+
+    # Check if we have a pre-built distribution
+    local dist_tar="/opt/dist.tar"
+    if [[ -f "$dist_tar" ]]; then
+        log "Found pre-built dist.tar - using minimal installation mode"
+        log "Skipping Node.js and build dependencies (not needed for pre-built deployment)"
+
+        # Only install essential runtime packages for pre-built mode
+        install_minimal_packages
+    else
+        log "No pre-built dist.tar found - using full build mode"
+        log "Installing all dependencies for building from source"
+
+        # Install all packages for building from source
+        install_system_packages
+        install_nodejs
+    fi
+
     create_service_user
     deploy_project
     configure_nginx
