@@ -1,44 +1,20 @@
 ---
 import '../styles/global.css'
 import menuData from '../data/menu.json'
+import MenuItemCard from '../components/MenuItemCard.astro'
+import PaymentOptionCard from '../components/PaymentOptionCard.astro'
 ---
 
-<html lang="en">
+<html lang="en" class="h-full">
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="generator" content={Astro.generator} />
 		<title>Manheim Lions Digital Menu</title>
-		<style>
-			/* Simplified font configuration */
-			html, body {
-				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-				font-size: 16px;
-				line-height: 1.5;
-				height: 100%;
-				margin: 0;
-				padding: 0;
-			}
-
-			/* Full viewport container */
-			.portrait-container {
-				min-height: 100vh;
-				width: 100%;
-				display: flex;
-				flex-direction: column;
-			}
-
-			/* Simple emoji styling */
-			.emoji {
-				font-style: normal;
-				font-weight: normal;
-				display: inline-block;
-			}
-		</style>
 	</head>
-	<body class="bg-slate-50 dark:bg-slate-800 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-		<div class="pixel-shift portrait-container">
+	<body class="h-full m-0 p-0 font-sans text-base leading-6 bg-slate-50 dark:bg-slate-800 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+		<div class="portrait-container min-h-screen w-full flex flex-col">
 			<!-- Header - Optimized for portrait 1080x1920 -->
 			<header class="bg-gradient-to-r from-slate-600 to-slate-700 dark:from-slate-700 dark:to-slate-800 text-white py-4 px-6 shadow-lg transition-colors duration-300 shrink-0">
 				<div class="max-w-4xl mx-auto text-center">
@@ -54,63 +30,62 @@ import menuData from '../data/menu.json'
 			<!-- Main Content - Optimized for portrait scrolling -->
 			<main class="flex-1 overflow-y-auto py-6 px-6 bg-white dark:bg-slate-900">
 				<div class="max-w-4xl mx-auto">
-					<!-- Food Section -->
-					<section class="mb-8">
-						<h2 class="text-3xl font-bold text-center text-gray-800 dark:text-white mb-6 border-b-2 border-blue-300 dark:border-blue-300 pb-3 transition-colors duration-300">
-							Food
-						</h2>
-						<div class="space-y-4">
-							{menuData.food.map((item) => (
-								<div class="menu-item-card bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-xl p-5 border-l-4 border-blue-500 dark:border-blue-300 transition-colors duration-300">
-									<div class="flex justify-between items-start">
-										<div class="flex-1 pr-4">
-											<h3 class="text-xl font-bold text-gray-800 dark:text-white leading-tight">{item.name}</h3>
-											<p class="text-base text-gray-600 dark:text-gray-200 mt-2 leading-relaxed">{item.description}</p>
-										</div>
-										<span class="text-2xl font-bold text-blue-600 dark:text-blue-300 shrink-0">{item.price}</span>
-									</div>
-								</div>
-							))}
-						</div>
-					</section>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Food Section (Left) -->
+                        <section class="mb-8">
+                            <h2 class="text-3xl font-bold text-center text-gray-800 dark:text-white mb-6 border-b-2 border-blue-300 dark:border-blue-300 pb-3 transition-colors duration-300">
+                                Food
+                            </h2>
+                            <div class="space-y-4">
+                                {menuData.food.map((item) => (
+                                    <MenuItemCard
+                                        name={item.name}
+                                        description={item.description}
+                                        price={item.price}
+                                        accentClasses="border-blue-500 dark:border-blue-300"
+                                        accentColor="#2563eb"
+                                        priceClasses="text-blue-600 dark:text-blue-300 shrink-0 my-auto"
+                                        imageSrc={item.imageSrc ?? undefined}
+                                        imageAlt={item.name}
+                                    />
+                                ))}
+                            </div>
+                        </section>
 
-					<!-- Beverages Section -->
-					<section class="mb-8">
-						<h2 class="text-3xl font-bold text-center text-gray-800 dark:text-white mb-6 border-b-2 border-green-300 dark:border-green-300 pb-3 transition-colors duration-300">
-							Beverages
-						</h2>
-						<div class="space-y-4">
-							{menuData.beverages.map((item) => (
-								<div class="menu-item-card bg-white dark:bg-slate-800 rounded-lg shadow-md dark:shadow-xl p-5 border-l-4 border-green-500 dark:border-green-300 transition-colors duration-300">
-									<div class="flex justify-between items-start">
-										<div class="flex-1 pr-4">
-											<h3 class="text-xl font-bold text-gray-800 dark:text-white leading-tight">{item.name}</h3>
-											<p class="text-base text-gray-600 dark:text-gray-200 mt-2 leading-relaxed">{item.description}</p>
-										</div>
-										<span class="text-2xl font-bold text-blue-600 dark:text-blue-300 shrink-0">{item.price}</span>
-									</div>
-								</div>
-							))}
-						</div>
-					</section>
+                        <!-- Beverages Section (Right) -->
+                        <section class="mb-8">
+                            <h2 class="text-3xl font-bold text-center text-gray-800 dark:text-white mb-6 border-b-2 border-green-300 dark:border-green-300 pb-3 transition-colors duration-300">
+                                Beverages
+                            </h2>
+                            <div class="space-y-4">
+                                {menuData.beverages.map((item) => (
+                                    <MenuItemCard
+                                        name={item.name}
+                                        description={item.description}
+                                        price={item.price}
+                                        accentClasses="border-green-500 dark:border-green-300"
+                                        accentColor="#16a34a"
+                                        priceClasses="text-blue-600 dark:text-blue-300 shrink-0"
+                                        imageSrc={item.imageSrc ?? undefined}
+                                        imageAlt={item.name}
+                                    />
+                                ))}
+                            </div>
+                        </section>
+                    </div>
 
-					<!-- Payment Info -->
-					<section class="text-center mb-8">
-						<div class="bg-gray-100 dark:bg-slate-700 border-2 border-gray-300 dark:border-slate-500 rounded-lg shadow-md dark:shadow-xl p-6 transition-colors duration-300">
-							<h3 class="text-2xl font-bold mb-4 text-gray-800 dark:text-white">
-								Payment Options
-							</h3>
-							<p class="text-lg mb-4 text-gray-700 dark:text-gray-100">We accept cash and card payments!</p>
-							<div class="flex justify-center space-x-6 text-base">
-								<span class="flex items-center bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100 px-4 py-2 rounded-lg font-medium">
-									Cash
-								</span>
-								<span class="flex items-center bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 px-4 py-2 rounded-lg font-medium">
-									Credit/Debit Cards
-								</span>
-							</div>
-						</div>
-					</section>
+                    <!-- Payment Info -->
+                    <section class="text-center mb-10">
+                        <div class="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-md p-8 transition-colors duration-300">
+                            <h3 class="text-4xl font-extrabold mb-5 text-gray-800 dark:text-white tracking-tight">Payment Options</h3>
+                            <p class="text-2xl font-semibold mb-8 text-gray-700 dark:text-gray-100">We accept cash and card payments!</p>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                                <PaymentOptionCard label="Cash" accentColor="#16a34a" accentClasses="border-green-500 dark:border-green-300" />
+                                <PaymentOptionCard label="Credit" accentColor="#2563eb" accentClasses="border-blue-500 dark:border-blue-300" />
+                                <PaymentOptionCard label="Debit" accentColor="#a855f7" accentClasses="border-purple-500 dark:border-purple-300" />
+                            </div>
+                        </div>
+                    </section>
 
 					<!-- Learn More Section -->
 					<!-- <section class="text-center mb-6">

@@ -3,34 +3,40 @@
     {
       "name": "Ham & Cheese Sandwich",
       "description": "Cold or Grilled • Our main attraction!",
-      "price": "$5.00"
+      "price": "$5",
+      "imageSrc": "/cards/hamncheese.png"
     },
     {
       "name": "Grilled Cheese",
       "description": "Can't beat a grilled cheese!",
-      "price": "$4.00"
+      "price": "$4",
+      "imageSrc": ""
     },
     {
       "name": "Tomato Soup",
       "description": "Good for dipping your sandwich in!",
-      "price": "$4.00"
+      "price": "$4",
+      "imageSrc": ""
     }
   ],
   "beverages": [
     {
       "name": "Soda",
       "description": "Coke, Diet Coke, Rootbeer, Sprite, Fanta",
-      "price": "$1.00"
+      "price": "$1",
+      "imageSrc": ""
     },
     {
       "name": "Water",
       "description": "A cold bottle of tasty water!",
-      "price": "$1.00"
+      "price": "$1",
+      "imageSrc": ""
     },
     {
       "name": "Capri Sun",
       "description": "A classical kid's favorite!",
-      "price": "$1.00"
+      "price": "$1",
+      "imageSrc": ""
     }
   ]
 }

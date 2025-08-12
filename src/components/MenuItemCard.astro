@@ -1,0 +1,54 @@
+---
+export interface Props {
+  name: string;
+  description: string;
+  price: string;
+  accentClasses?: string;
+  priceClasses?: string;
+  accentColor?: string;
+  imageSrc?: string;
+  imageAlt?: string;
+  imageFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
+}
+
+const {
+  name,
+  description,
+  price,
+  accentClasses = 'border-blue-500 dark:border-blue-300',
+  priceClasses = 'text-blue-600 dark:text-blue-300 shrink-0',
+  accentColor = '#2563eb',
+  imageSrc,
+  imageAlt,
+  imageFit = 'cover',
+} = Astro.props as Props;
+---
+
+<div
+  style={`--card-accent: ${accentColor}`}
+  class={`menu-item-card ml-card relative overflow-hidden bg-white dark:bg-slate-900 rounded-2xl transition-all duration-300 -translate-y-1.5 shadow-xl border border-white/20 dark:border-white/10 border-l-4 ${accentClasses}`}
+>
+  <div class="p-5 sm:p-6 h-full flex flex-col gap-3 relative z-[1]">
+    {imageSrc && (
+      <div class="w-[80%] mx-auto aspect-square rounded-xl relative overflow-hidden bg-transparent transform -translate-y-1 scale-[1.02] shadow-lg">
+        <div class="w-full h-full absolute inset-0 z-0"></div>
+        <img
+          src={imageSrc}
+          alt={imageAlt ?? `${name} image`}
+          class="w-full h-full block relative z-[1]"
+          style={`object-fit:${imageFit}`}
+          loading="lazy"
+          onload="this.previousElementSibling && (this.previousElementSibling.style.display='none')"
+          onerror="this.style.display='none'"
+        />
+      </div>
+    )}
+    <div class="flex gap-2 justify-between">
+      <div class="flex flex-col gap-2">
+        <h3 class="text-black dark:text-white text-2xl font-extrabold">{name}</h3>
+        <p class="text-black dark:text-white/90 text-lg leading-relaxed">{description}</p>
+      </div>
+      <p class={`font-extrabold text-5xl shrink-0 ${priceClasses} text-black dark:text-white`}>{price}</p>
+    </div>
+  </div>
+</div>
