@@ -106,3 +106,57 @@ body {
 .high-contrast {
   filter: contrast(1.1) saturate(1.1);
 }
+
+/* Portrait display optimization - 1080x1920 (rotated 1920x1080) */
+@media screen and (max-width: 1200px) {
+  .portrait-container {
+    width: 100vw !important;
+    height: 100vh !important;
+  }
+
+  body {
+    font-size: 13px !important;
+  }
+
+  .menu-item-card {
+    padding: 0.5rem !important;
+  }
+
+  .menu-item-card h3 {
+    font-size: 0.9rem !important;
+  }
+
+  .menu-item-card p {
+    font-size: 0.75rem !important;
+  }
+}
+
+/* Emoji support across different systems */
+.emoji {
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', sans-serif !important;
+  font-style: normal !important;
+  font-weight: normal !important;
+  font-variant: normal !important;
+  text-rendering: auto !important;
+  -webkit-font-feature-settings: "liga" off !important;
+  font-feature-settings: "liga" off !important;
+}
+
+/* Fallback for systems without emoji fonts */
+@supports not (font-family: 'Apple Color Emoji') {
+  .emoji {
+    font-size: 1.2em !important;
+    color: #2563eb !important; /* Blue color as fallback */
+  }
+}
+
+/* Kiosk mode optimizations */
+@media screen and (display-mode: fullscreen) {
+  body {
+    overflow: hidden;
+  }
+
+  .portrait-container {
+    overflow: hidden;
+  }
+}
