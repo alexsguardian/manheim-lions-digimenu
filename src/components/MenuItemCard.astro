@@ -5,6 +5,7 @@ export interface Props {
   price: string;
   accentClasses?: string;
   priceClasses?: string;
+  nameClasses?: string;
   accentColor?: string;
   imageSrc?: string;
   imageAlt?: string;
@@ -16,7 +17,8 @@ const {
   description,
   price,
   accentClasses = 'border-blue-500 dark:border-blue-300',
-  priceClasses = 'text-blue-600 dark:text-blue-300 shrink-0',
+  priceClasses = 'text-amber-500 dark:text-amber-300 shrink-0',
+  nameClasses = 'text-black dark:text-white',
   accentColor = '#2563eb',
   imageSrc,
   imageAlt,
@@ -45,10 +47,10 @@ const {
     )}
     <div class="flex gap-2 justify-between items-center">
       <div class="flex flex-col gap-2">
-        <h3 class="text-black dark:text-white text-2xl font-extrabold">{name}</h3>
+        <h3 class={`${nameClasses} text-2xl font-extrabold`}>{name}</h3>
         <p class="text-black dark:text-white/90 text-lg leading-relaxed">{description}</p>
       </div>
-      <p class={`font-extrabold text-4xl shrink-0 ${priceClasses} text-black dark:text-white`}>{price}</p>
+      <p class={`font-extrabold text-4xl shrink-0 ${priceClasses}`}>{price}</p>
     </div>
   </div>
 </div>

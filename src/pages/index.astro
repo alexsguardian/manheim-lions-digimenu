@@ -28,12 +28,12 @@ import PaymentOptionCard from '../components/PaymentOptionCard.astro'
 			</header>
 
 			<!-- Main Content - Optimized for portrait scrolling -->
-			<main class="flex-1 overflow-y-auto py-6 px-6 bg-white dark:bg-slate-900">
+			<main class="flex-1 overflow-y-auto py-6 px-6 bg-slate-100 dark:bg-slate-900">
 				<div class="max-w-4xl mx-auto">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <!-- Food Section (Left) -->
                         <section class="mb-8">
-                            <h2 class="text-3xl font-bold text-center text-gray-800 dark:text-white mb-6 border-b-2 border-blue-300 dark:border-blue-300 pb-3 transition-colors duration-300">
+                            <h2 class="text-3xl font-extrabold text-center mb-6 transition-colors duration-300 bg-white dark:bg-blue-900/30 text-black dark:text-white rounded-xl py-3 shadow-lg">
                                 Food
                             </h2>
                             <div class="space-y-4">
@@ -44,7 +44,7 @@ import PaymentOptionCard from '../components/PaymentOptionCard.astro'
                                         price={item.price}
                                         accentClasses="border-blue-500 dark:border-blue-300"
                                         accentColor="#2563eb"
-                                        priceClasses="text-blue-600 dark:text-blue-300 shrink-0 my-auto"
+                                        nameClasses="text-black dark:text-white"
                                         imageSrc={item.imageSrc ?? undefined}
                                         imageAlt={item.name}
                                     />
@@ -54,7 +54,7 @@ import PaymentOptionCard from '../components/PaymentOptionCard.astro'
 
                         <!-- Beverages Section (Right) -->
                         <section class="mb-8">
-                            <h2 class="text-3xl font-bold text-center text-gray-800 dark:text-white mb-6 border-b-2 border-green-300 dark:border-green-300 pb-3 transition-colors duration-300">
+                            <h2 class="text-3xl font-extrabold text-center mb-6 transition-colors duration-300 bg-white dark:bg-green-900/30 text-black dark:text-white rounded-xl py-3 shadow-lg">
                                 Beverages
                             </h2>
                             <div class="space-y-4">
@@ -65,7 +65,7 @@ import PaymentOptionCard from '../components/PaymentOptionCard.astro'
                                         price={item.price}
                                         accentClasses="border-green-500 dark:border-green-300"
                                         accentColor="#16a34a"
-                                        priceClasses="text-blue-600 dark:text-blue-300 shrink-0"
+                                        nameClasses="text-black dark:text-white"
                                         imageSrc={item.imageSrc ?? undefined}
                                         imageAlt={item.name}
                                     />
@@ -74,18 +74,7 @@ import PaymentOptionCard from '../components/PaymentOptionCard.astro'
                         </section>
                     </div>
 
-                    <!-- Payment Info -->
-                    <section class="text-center mb-10">
-                        <div class="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-md p-8 transition-colors duration-300">
-                            <h3 class="text-4xl font-extrabold mb-5 text-gray-800 dark:text-white tracking-tight">Payment Options</h3>
-                            <p class="text-2xl font-semibold mb-8 text-gray-700 dark:text-gray-100">We accept cash and card payments!</p>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                                <PaymentOptionCard label="Cash" accentColor="#16a34a" accentClasses="border-green-500 dark:border-green-300" />
-                                <PaymentOptionCard label="Credit" accentColor="#2563eb" accentClasses="border-blue-500 dark:border-blue-300" />
-                                <PaymentOptionCard label="Debit" accentColor="#a855f7" accentClasses="border-purple-500 dark:border-purple-300" />
-                            </div>
-                        </div>
-                    </section>
+                    
 
 					<!-- Learn More Section -->
 					<!-- <section class="text-center mb-6">
@@ -103,6 +92,21 @@ import PaymentOptionCard from '../components/PaymentOptionCard.astro'
 					</section> -->
 				</div>
 			</main>
+
+			<!-- Payment Info (Bottom of page) -->
+			<section class="text-center mb-10 px-6">
+				<div class="max-w-4xl mx-auto">
+					<div class="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-md p-8 transition-colors duration-300">
+						<h3 class="text-4xl font-extrabold mb-5 text-gray-800 dark:text-white tracking-tight">Payment Options</h3>
+						<p class="text-2xl font-semibold mb-8 text-gray-700 dark:text-gray-100">We accept cash and card payments!</p>
+						<div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+							<PaymentOptionCard label="Cash" accentColor="#16a34a" accentClasses="border-green-500 dark:border-green-300" />
+							<PaymentOptionCard label="Credit" accentColor="#2563eb" accentClasses="border-blue-500 dark:border-blue-300" />
+							<PaymentOptionCard label="Debit" accentColor="#a855f7" accentClasses="border-purple-500 dark:border-purple-300" />
+						</div>
+					</div>
+				</div>
+			</section>
 
 			<!-- Footer - Compact -->
 			<footer class="bg-gray-800 dark:bg-slate-950 text-white py-4 px-6 transition-colors duration-300 shrink-0">
