@@ -244,17 +244,70 @@ deploy_project() {
                     else
                         log_error "Method 3 failed. Trying Method 4..."
 
-                        # Method 4: Try with different Node.js version or fallback
-                        log "Method 4: Attempting with different npm configurations..."
-                        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && rm -rf node_modules"
+                        # Method 4: Try with Node.js 18 LTS (more stable on ARM64)
+                        log "Method 4: Checking if Node.js version is the issue..."
+                        log "Current Node.js version: $(node --version)"
+                        log "Attempting to install Node.js 18 LTS for better ARM64 compatibility..."
 
-                        # Set npm to prefer native modules for this architecture
-                        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm config set target_arch arm64"
-                        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm config set target_platform linux"
+                        # Install Node.js 18 LTS
+                        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash - || true
+                        sudo apt-get install -y nodejs || true
+
+                        # Verify new version
+                        local new_node_version
+                        new_node_version=$(node --version)
+                        log "New Node.js version: $new_node_version"
+
+                        # Clean install with Node 18
+                        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && rm -rf node_modules package-lock.json"
                         sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install"
 
-                        log "Final build attempt with architecture-specific config..."
-                        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build" || error_exit "All ARM64 build methods failed. This may require a different Node.js version or Astro configuration for ARM64."
+                        log "Attempting build with Node.js 18..."
+                        if sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build"; then
+                            log_success "Build succeeded with Node.js 18!"
+                        else
+                            log_error "Method 4 failed. Trying Method 5..."
+
+                            # Method 5: Try building with static generation disabled
+                            log "Method 5: Attempting build with static generation modifications..."
+
+                            # Check if astro.config exists and try to modify it for ARM64
+                            if [[ -f "$PROJECT_DIR/astro.config.ts" ]] || [[ -f "$PROJECT_DIR/astro.config.js" ]]; then
+                                log "Found Astro config, attempting build optimization for ARM64..."
+
+                                # Create a temporary build script that might bypass the issue
+                                sudo -u "$SERVICE_USER" tee "$PROJECT_DIR/build-arm64.js" > /dev/null <<'EOF'
+const { spawn } = require('child_process');
+const path = require('path');
+
+// Try building with different optimizations
+const buildProcess = spawn('npx', ['astro', 'build', '--mode', 'production'], {
+    cwd: process.cwd(),
+    stdio: 'inherit',
+    env: {
+        ...process.env,
+        NODE_OPTIONS: '--max-old-space-size=2048',
+        ASTRO_TELEMETRY_DISABLED: '1'
+    }
+});
+
+buildProcess.on('close', (code) => {
+    process.exit(code);
+});
+EOF
+
+                                sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && node build-arm64.js"
+
+                                if [[ -d "$PROJECT_DIR/dist" ]] && [[ -f "$PROJECT_DIR/dist/index.html" ]]; then
+                                    log_success "Build succeeded with custom ARM64 build script!"
+                                else
+                                    log_error "Custom build also failed."
+                                    error_exit "All ARM64 build methods failed. This ARM64 system may not be compatible with the current Astro/Node.js setup. Consider: 1) Using a pre-built static version, 2) Building on a different architecture and copying files, or 3) Using a different Node.js version."
+                                fi
+                            else
+                                error_exit "No Astro config found and all build methods failed."
+                            fi
+                        fi
                     fi
                 fi
             fi
