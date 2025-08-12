@@ -2,34 +2,34 @@
   "food": [
     {
       "name": "Ham & Cheese Sandwich",
-      "description": "Cold or Grilled • Fresh & Delicious",
+      "description": "Cold or Grilled • Our main attraction!",
       "price": "$5.00"
     },
     {
       "name": "Grilled Cheese",
-      "description": "Classic comfort food",
+      "description": "Can't beat a grilled cheese!",
       "price": "$4.00"
     },
     {
       "name": "Tomato Soup",
-      "description": "Warm & hearty",
+      "description": "Good for dipping your sandwich in!",
       "price": "$4.00"
     }
   ],
   "beverages": [
     {
       "name": "Soda",
-      "description": "Coke products",
+      "description": "Coke, Diet Coke, Rootbeer, Sprite, Fanta",
       "price": "$1.00"
     },
     {
       "name": "Water",
-      "description": "Bottled water",
+      "description": "A cold bottle of tasty water!",
       "price": "$1.00"
     },
     {
       "name": "Capri Sun",
-      "description": "Kids favorite",
+      "description": "A classical kid's favorite!",
       "price": "$1.00"
     }
   ]

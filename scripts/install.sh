@@ -11,7 +11,7 @@ readonly PROJECT_NAME="manheim-lions-menu"
 readonly PROJECT_DIR="/opt/${PROJECT_NAME}"
 readonly SERVICE_USER="menudisplay"
 readonly REPO_URL="https://github.com/alexsguardian/manheim-lions-digimenu.git"
-readonly LOG_FILE="/var/log/menu-install.log"
+readonly LOG_FILE="/opt/menu-install.log"
 
 # Colors for output
 readonly RED='\033[0;31m'
@@ -22,19 +22,35 @@ readonly NC='\033[0m'
 
 # Logging functions
 log() {
-    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')] INFO:${NC} $1" | tee -a "$LOG_FILE"
+    if [[ -w "$LOG_FILE" ]] 2>/dev/null; then
+        echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')] INFO:${NC} $1" | tee -a "$LOG_FILE"
+    else
+        echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')] INFO:${NC} $1"
+    fi
 }
 
 log_success() {
-    echo -e "${GREEN}[$(date '+%Y-%m-%d %H:%M:%S')] SUCCESS:${NC} $1" | tee -a "$LOG_FILE"
+    if [[ -w "$LOG_FILE" ]] 2>/dev/null; then
+        echo -e "${GREEN}[$(date '+%Y-%m-%d %H:%M:%S')] SUCCESS:${NC} $1" | tee -a "$LOG_FILE"
+    else
+        echo -e "${GREEN}[$(date '+%Y-%m-%d %H:%M:%S')] SUCCESS:${NC} $1"
+    fi
 }
 
 log_warning() {
-    echo -e "${YELLOW}[$(date '+%Y-%m-%d %H:%M:%S')] WARNING:${NC} $1" | tee -a "$LOG_FILE"
+    if [[ -w "$LOG_FILE" ]] 2>/dev/null; then
+        echo -e "${YELLOW}[$(date '+%Y-%m-%d %H:%M:%S')] WARNING:${NC} $1" | tee -a "$LOG_FILE"
+    else
+        echo -e "${YELLOW}[$(date '+%Y-%m-%d %H:%M:%S')] WARNING:${NC} $1"
+    fi
 }
 
 log_error() {
-    echo -e "${RED}[$(date '+%Y-%m-%d %H:%M:%S')] ERROR:${NC} $1" | tee -a "$LOG_FILE"
+    if [[ -w "$LOG_FILE" ]] 2>/dev/null; then
+        echo -e "${RED}[$(date '+%Y-%m-%d %H:%M:%S')] ERROR:${NC} $1" | tee -a "$LOG_FILE"
+    else
+        echo -e "${RED}[$(date '+%Y-%m-%d %H:%M:%S')] ERROR:${NC} $1"
+    fi
 }
 
 # Error handler
@@ -86,24 +102,75 @@ install_system_packages() {
     log_success "System packages installed"
 }
 
+# Minimal package installation (for pre-built deployments)
+install_minimal_packages() {
+    log "Updating package repositories..."
+    sudo apt-get update -qq
+
+    log "Upgrading system packages..."
+    sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -qq
+
+    local packages=(
+        "git"
+        "curl"
+        "nginx"
+        "xorg"
+        "openbox"
+        "lightdm"
+        "x11-xserver-utils"
+        "xinit"
+        "unclutter"
+        "chromium-browser"
+    )
+
+    log "Installing minimal packages for pre-built deployment: ${packages[*]}"
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${packages[@]}"
+
+    log_success "Minimal packages installed (no Node.js/build tools)"
+}
+
 # Node.js installation
 install_nodejs() {
     log "Installing Node.js LTS..."
 
+    # Detect architecture
+    local arch
+    arch=$(uname -m)
+    log "Detected architecture: $arch"
+
     # Remove any existing Node.js
     sudo apt-get remove -y -qq nodejs npm || true
+    sudo apt-get autoremove -y -qq || true
 
-    # Install from NodeSource
-    curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-    sudo apt-get install -y -qq nodejs
+    # Install from NodeSource with architecture awareness
+    log "Downloading and installing Node.js from NodeSource..."
+    if ! curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -; then
+        log_error "Failed to setup NodeSource repository"
+
+        # Fallback: try installing from default repositories
+        log "Falling back to default repository Node.js..."
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq nodejs npm
+    else
+        sudo apt-get install -y -qq nodejs
+    fi
 
     # Verify installation
     local node_version
     local npm_version
-    node_version=$(node --version)
-    npm_version=$(npm --version)
+    if ! node_version=$(node --version 2>/dev/null); then
+        error_exit "Node.js installation failed - node command not found"
+    fi
+
+    if ! npm_version=$(npm --version 2>/dev/null); then
+        error_exit "npm installation failed - npm command not found"
+    fi
 
     log_success "Node.js $node_version and npm $npm_version installed"
+
+    # Update npm to latest compatible version
+    log "Updating npm to latest version..."
+    sudo npm install -g npm@latest || log_warning "npm update failed, continuing with current version"
 }
 
 # User management
@@ -126,7 +193,7 @@ create_service_user() {
 
 # Project deployment
 deploy_project() {
-    log "Deploying project to $PROJECT_DIR..."
+    log "Deploying project to $PROJECT_DIR (using pre-built dist.tar)..."
 
     # Clean existing directory
     if [[ -d "$PROJECT_DIR" ]]; then
@@ -134,20 +201,101 @@ deploy_project() {
         sudo mv "$PROJECT_DIR" "${PROJECT_DIR}.backup.$(date +%s)"
     fi
 
-    # Clone repository
-    sudo git clone "$REPO_URL" "$PROJECT_DIR"
+    # Create project directory
+    sudo mkdir -p "$PROJECT_DIR"
 
-    # Set ownership
+    # Check for pre-built dist.tar file
+    local dist_tar="/opt/dist.tar"
+    if [[ -f "$dist_tar" ]]; then
+        log "Found pre-built dist.tar file, extracting..."
+
+        # Extract the pre-built distribution
+        sudo tar -xf "$dist_tar" -C "$PROJECT_DIR" || error_exit "Failed to extract dist.tar"
+
+        # Verify extraction was successful
+        if [[ -d "$PROJECT_DIR/dist" ]] && [[ -f "$PROJECT_DIR/dist/index.html" ]]; then
+            log_success "Pre-built distribution extracted successfully!"
+        else
+            error_exit "dist.tar extraction failed - no valid dist folder found"
+        fi
+
+        # Clone repository for configuration and script files (but skip building)
+        log "Cloning repository for configuration and script files..."
+        local temp_repo="/tmp/menu-repo"
+        if [[ -d "$temp_repo" ]]; then
+            sudo rm -rf "$temp_repo"
+        fi
+        sudo git clone "$REPO_URL" "$temp_repo"
+
+        # Copy all needed files from repository
+        log "Copying repository files to project directory..."
+
+        # Copy configuration files if they exist
+        if [[ -f "$temp_repo/package.json" ]]; then
+            sudo cp "$temp_repo/package.json" "$PROJECT_DIR/"
+        fi
+        if [[ -f "$temp_repo/astro.config.ts" ]]; then
+            sudo cp "$temp_repo/astro.config.ts" "$PROJECT_DIR/"
+        fi
+        if [[ -f "$temp_repo/astro.config.js" ]]; then
+            sudo cp "$temp_repo/astro.config.js" "$PROJECT_DIR/"
+        fi
+        if [[ -f "$temp_repo/README.md" ]]; then
+            sudo cp "$temp_repo/README.md" "$PROJECT_DIR/"
+        fi
+
+        # Copy scripts directory if it exists in the repo
+        if [[ -d "$temp_repo/scripts" ]]; then
+            sudo cp -r "$temp_repo/scripts" "$PROJECT_DIR/"
+            log "Copied scripts directory from repository"
+        fi
+
+        # Copy any other important files
+        if [[ -f "$temp_repo/tailwind.config.ts" ]]; then
+            sudo cp "$temp_repo/tailwind.config.ts" "$PROJECT_DIR/"
+        fi
+        if [[ -f "$temp_repo/tailwind.config.mjs" ]]; then
+            sudo cp "$temp_repo/tailwind.config.mjs" "$PROJECT_DIR/"
+        fi
+
+        # Clean up temp repo
+        sudo rm -rf "$temp_repo"
+
+        log "Pre-built deployment completed - no build required on Pi!"
+
+    else
+        log_warning "No pre-built dist.tar found at $dist_tar"
+        log "Falling back to building from source..."
+
+        # Clone repository
+        sudo git clone "$REPO_URL" "$PROJECT_DIR"
+
+        log "System architecture: $(uname -m)"
+        log "Node.js version: $(node --version)"
+        log "npm version: $(npm --version)"
+
+        # Try building from source (fallback)
+        log "Installing dependencies..."
+        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install"
+
+        log "Building application..."
+        if sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build"; then
+            log_success "Source build completed successfully!"
+        else
+            error_exit "Build from source failed. Please provide a pre-built dist.tar file in /opt/ or fix ARM64 compatibility issues."
+        fi
+    fi
+
+    # Set proper ownership
     sudo chown -R "$SERVICE_USER:$SERVICE_USER" "$PROJECT_DIR"
 
-    # Install dependencies and build
-    log "Installing npm dependencies..."
-    sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm ci --only=production"
-
-    log "Building application..."
-    sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build"
-
-    log_success "Project deployed and built"
+    # Ensure dist directory has correct permissions
+    if [[ -d "$PROJECT_DIR/dist" ]]; then
+        sudo chmod -R 755 "$PROJECT_DIR/dist"
+        log_success "Project deployed successfully"
+    else
+        error_exit "No dist directory found after deployment"
+    fi
 }
 
 # Web server configuration
@@ -215,9 +363,9 @@ create_systemd_service() {
 [Unit]
 Description=Manheim Lions Digital Menu Display
 Documentation=https://github.com/alexsguardian/manheim-lions-digimenu
-After=graphical-session.target network.target nginx.service
-Wants=graphical-session.target
-Requires=nginx.service
+After=lightdm.service network.target nginx.service
+Wants=lightdm.service
+Requires=nginx.service lightdm.service
 
 [Service]
 Type=simple
@@ -226,7 +374,7 @@ Group=$SERVICE_USER
 Environment=DISPLAY=:0
 Environment=HOME=/var/lib/$SERVICE_USER
 WorkingDirectory=$PROJECT_DIR
-ExecStartPre=/bin/sleep 10
+ExecStartPre=/bin/sleep 15
 ExecStart=/opt/$PROJECT_NAME/scripts/menu-display.sh
 Restart=always
 RestartSec=10
@@ -250,6 +398,7 @@ WantedBy=graphical.target
 EOF
 
     # Create the actual service script
+    sudo mkdir -p "$PROJECT_DIR/scripts"
     sudo tee "$PROJECT_DIR/scripts/menu-display.sh" > /dev/null <<'EOF'
 #!/bin/bash
 
@@ -389,6 +538,10 @@ EOF
 
     sudo chown -R "$SERVICE_USER:$SERVICE_USER" "/var/lib/$SERVICE_USER/.config"
 
+    # Set system to boot into graphical mode
+    log "Setting system to boot into graphical mode..."
+    sudo systemctl set-default graphical.target
+
     # Enable auto-login service
     sudo systemctl enable lightdm
 
@@ -466,18 +619,34 @@ EOF
 
 # Main installation function
 main() {
-    echo "🦁 Manheim Lions Digital Menu - Cloud-Init Installation v$SCRIPT_VERSION"
-    echo "======================================================================="
-
-    # Create log file
+    # Create log file first, before any logging
     sudo touch "$LOG_FILE"
     sudo chmod 644 "$LOG_FILE"
+
+    echo "🦁 Manheim Lions Digital Menu - Cloud-Init Installation v$SCRIPT_VERSION"
+    echo "======================================================================="
 
     log "Starting installation process..."
 
     check_privileges
-    install_system_packages
-    install_nodejs
+
+    # Check if we have a pre-built distribution
+    local dist_tar="/opt/dist.tar"
+    if [[ -f "$dist_tar" ]]; then
+        log "Found pre-built dist.tar - using minimal installation mode"
+        log "Skipping Node.js and build dependencies (not needed for pre-built deployment)"
+
+        # Only install essential runtime packages for pre-built mode
+        install_minimal_packages
+    else
+        log "No pre-built dist.tar found - using full build mode"
+        log "Installing all dependencies for building from source"
+
+        # Install all packages for building from source
+        install_system_packages
+        install_nodejs
+    fi
+
     create_service_user
     deploy_project
     configure_nginx
