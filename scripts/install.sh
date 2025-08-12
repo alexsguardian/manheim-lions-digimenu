@@ -209,26 +209,54 @@ deploy_project() {
 
         # Check for specific Rollup ARM64 issue
         if [[ "$arch" == "aarch64" ]] || [[ "$arch" == *"arm"* ]]; then
-            log "Detected ARM architecture - attempting Rollup ARM64 fix..."
-            log "Removing package-lock.json and node_modules (npm bug workaround)..."
+            log "Detected ARM architecture - attempting comprehensive ARM64 fixes..."
 
-            # Remove package-lock.json and node_modules
-            sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && rm -f package-lock.json"
-            sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && rm -rf node_modules"
+            # Method 1: Try installing dev dependencies (Rollup might be in devDependencies)
+            log "Method 1: Installing all dependencies including dev dependencies..."
+            sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && rm -rf node_modules package-lock.json"
+            sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install"
 
-            # Reinstall with npm install (not npm ci) to avoid lock file issues
-            log "Reinstalling dependencies without lock file..."
-            sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install --only=production"
+            log "Retrying build with dev dependencies..."
+            if sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build"; then
+                log_success "Build succeeded with dev dependencies!"
+            else
+                log_error "Method 1 failed. Trying Method 2..."
 
-            # Try build again
-            log "Retrying build after ARM64 fix..."
-            if ! sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build"; then
-                log_error "Build still failed after ARM64 fix. Trying without optional dependencies..."
+                # Method 2: Force install the specific Rollup ARM64 module
+                log "Method 2: Manually installing Rollup ARM64 module..."
+                sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install @rollup/rollup-linux-arm64-gnu --save-optional" || true
 
-                # Last resort: reinstall without optional dependencies
-                sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && rm -rf node_modules"
-                sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install --only=production --no-optional"
-                sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build" || error_exit "All build attempts failed"
+                log "Retrying build after manual Rollup install..."
+                if sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build"; then
+                    log_success "Build succeeded after manual Rollup install!"
+                else
+                    log_error "Method 2 failed. Trying Method 3..."
+
+                    # Method 3: Use npm's force option and rebuild
+                    log "Method 3: Force reinstall with rebuild..."
+                    sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && rm -rf node_modules package-lock.json"
+                    sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install --force"
+                    sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm rebuild" || true
+
+                    log "Retrying build after force install and rebuild..."
+                    if sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build"; then
+                        log_success "Build succeeded after force install!"
+                    else
+                        log_error "Method 3 failed. Trying Method 4..."
+
+                        # Method 4: Try with different Node.js version or fallback
+                        log "Method 4: Attempting with different npm configurations..."
+                        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && rm -rf node_modules"
+
+                        # Set npm to prefer native modules for this architecture
+                        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm config set target_arch arm64"
+                        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm config set target_platform linux"
+                        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm install"
+
+                        log "Final build attempt with architecture-specific config..."
+                        sudo -u "$SERVICE_USER" bash -c "cd $PROJECT_DIR && npm run build" || error_exit "All ARM64 build methods failed. This may require a different Node.js version or Astro configuration for ARM64."
+                    fi
+                fi
             fi
         else
             log "Attempting to rebuild native modules..."
