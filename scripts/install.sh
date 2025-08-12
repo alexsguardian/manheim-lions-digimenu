@@ -22,19 +22,35 @@ readonly NC='\033[0m'
 
 # Logging functions
 log() {
-    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')] INFO:${NC} $1" | tee -a "$LOG_FILE"
+    if [[ -w "$LOG_FILE" ]] 2>/dev/null; then
+        echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')] INFO:${NC} $1" | tee -a "$LOG_FILE"
+    else
+        echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')] INFO:${NC} $1"
+    fi
 }
 
 log_success() {
-    echo -e "${GREEN}[$(date '+%Y-%m-%d %H:%M:%S')] SUCCESS:${NC} $1" | tee -a "$LOG_FILE"
+    if [[ -w "$LOG_FILE" ]] 2>/dev/null; then
+        echo -e "${GREEN}[$(date '+%Y-%m-%d %H:%M:%S')] SUCCESS:${NC} $1" | tee -a "$LOG_FILE"
+    else
+        echo -e "${GREEN}[$(date '+%Y-%m-%d %H:%M:%S')] SUCCESS:${NC} $1"
+    fi
 }
 
 log_warning() {
-    echo -e "${YELLOW}[$(date '+%Y-%m-%d %H:%M:%S')] WARNING:${NC} $1" | tee -a "$LOG_FILE"
+    if [[ -w "$LOG_FILE" ]] 2>/dev/null; then
+        echo -e "${YELLOW}[$(date '+%Y-%m-%d %H:%M:%S')] WARNING:${NC} $1" | tee -a "$LOG_FILE"
+    else
+        echo -e "${YELLOW}[$(date '+%Y-%m-%d %H:%M:%S')] WARNING:${NC} $1"
+    fi
 }
 
 log_error() {
-    echo -e "${RED}[$(date '+%Y-%m-%d %H:%M:%S')] ERROR:${NC} $1" | tee -a "$LOG_FILE"
+    if [[ -w "$LOG_FILE" ]] 2>/dev/null; then
+        echo -e "${RED}[$(date '+%Y-%m-%d %H:%M:%S')] ERROR:${NC} $1" | tee -a "$LOG_FILE"
+    else
+        echo -e "${RED}[$(date '+%Y-%m-%d %H:%M:%S')] ERROR:${NC} $1"
+    fi
 }
 
 # Error handler
@@ -466,12 +482,12 @@ EOF
 
 # Main installation function
 main() {
-    echo "🦁 Manheim Lions Digital Menu - Cloud-Init Installation v$SCRIPT_VERSION"
-    echo "======================================================================="
-
-    # Create log file
+    # Create log file first, before any logging
     sudo touch "$LOG_FILE"
     sudo chmod 644 "$LOG_FILE"
+
+    echo "🦁 Manheim Lions Digital Menu - Cloud-Init Installation v$SCRIPT_VERSION"
+    echo "======================================================================="
 
     log "Starting installation process..."
 
