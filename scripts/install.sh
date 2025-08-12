@@ -363,9 +363,9 @@ create_systemd_service() {
 [Unit]
 Description=Manheim Lions Digital Menu Display
 Documentation=https://github.com/alexsguardian/manheim-lions-digimenu
-After=graphical-session.target network.target nginx.service
-Wants=graphical-session.target
-Requires=nginx.service
+After=lightdm.service network.target nginx.service
+Wants=lightdm.service
+Requires=nginx.service lightdm.service
 
 [Service]
 Type=simple
@@ -374,7 +374,7 @@ Group=$SERVICE_USER
 Environment=DISPLAY=:0
 Environment=HOME=/var/lib/$SERVICE_USER
 WorkingDirectory=$PROJECT_DIR
-ExecStartPre=/bin/sleep 10
+ExecStartPre=/bin/sleep 15
 ExecStart=/opt/$PROJECT_NAME/scripts/menu-display.sh
 Restart=always
 RestartSec=10
@@ -537,6 +537,10 @@ EOF
 EOF
 
     sudo chown -R "$SERVICE_USER:$SERVICE_USER" "/var/lib/$SERVICE_USER/.config"
+
+    # Set system to boot into graphical mode
+    log "Setting system to boot into graphical mode..."
+    sudo systemctl set-default graphical.target
 
     # Enable auto-login service
     sudo systemctl enable lightdm
