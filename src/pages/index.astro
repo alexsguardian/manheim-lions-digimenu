@@ -8,27 +8,23 @@ import PaymentOptionCard from '../components/PaymentOptionCard.astro'
 <html lang="en" class="h-full">
 	<head>
 		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" type="image/png" href="/CentennialLogo.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="generator" content={Astro.generator} />
 		<title>Manheim Lions Digital Menu</title>
 	</head>
-	<body class="h-full m-0 p-0 font-sans text-base leading-6 bg-slate-50 dark:bg-slate-800 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-		<div class="portrait-container min-h-screen w-full flex flex-col">
-			<!-- Header - Optimized for portrait 1080x1920 -->
-			<header class="bg-gradient-to-r from-slate-600 to-slate-700 dark:from-slate-700 dark:to-slate-800 text-white py-4 px-6 shadow-lg transition-colors duration-300 shrink-0">
+	<body class="h-full m-0 p-0 font-sans text-base leading-6 bg-slate-100 dark:bg-slate-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+		<div class="portrait-container min-h-screen w-full flex flex-col relative">
+			<!-- Header - Just the ribbon image -->
+			<header class="shrink-0">
 				<div class="max-w-4xl mx-auto text-center">
-					<div class="flex items-center justify-center gap-4 mb-2">
-						<img src="./CentennialLogo.png" alt="Manheim Lions Club" class="h-12 w-auto" onerror="this.style.display='none'" />
-						<div>
-							<h1 class="text-2xl font-bold tracking-tight">Manheim Lions Club</h1>
-						</div>
-					</div>
+					<img src="./CentennialRibbon.png" alt="Manheim Lions Club Centennial Ribbon" class="h-96 w-auto mx-auto" onerror="this.style.display='none'" />
 				</div>
+			<hr class="border-t-4 border-yellow-400 dark:border-yellow-500 w-64 justify-center mx-auto"/>
 			</header>
 
 			<!-- Main Content - Optimized for portrait scrolling -->
-			<main class="flex-1 overflow-y-auto py-6 px-6 bg-slate-100 dark:bg-slate-900">
+			<main class="flex-1 overflow-y-auto py-6 px-6 bg-slate-100 dark:bg-slate-900 pb-48">
 				<div class="max-w-4xl mx-auto">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <!-- Food Section (Left) -->
@@ -74,36 +70,34 @@ import PaymentOptionCard from '../components/PaymentOptionCard.astro'
                         </section>
                     </div>
 
-                    
-
-					<!-- Learn More Section -->
-					<!-- <section class="text-center mb-6">
-						<h3 class="text-2xl font-bold mb-4 text-gray-800 dark:text-white">What is a Lion?</h3>
-						<div class="bg-gray-200 dark:bg-slate-700 rounded-lg p-6 transition-colors duration-300">
-							<div class="bg-gray-400 dark:bg-slate-600 rounded-lg flex items-center justify-center h-48 transition-colors duration-300">
-								<div class="text-center text-gray-600 dark:text-gray-200">
-									<svg class="w-12 h-12 mx-auto mb-3" fill="currentColor" viewBox="0 0 20 20">
-										<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
-									</svg>
-									<p class="text-base font-medium">Video Coming Soon</p>
+					<!-- Learn about us Section -->
+					<section class="text-center mb-6 mt-24">
+						<h3 class="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Learn more about us!</h3>
+						<div>
+							<div class="flex items-center justify-center gap-8">
+								<!-- Arrow pointing to QR code -->
+								<div class="flex flex-col items-center">
+									<!-- QR Code -->
+									<div class="bg-white p-4 rounded-xl shadow-md">
+										<p class="text-lg font-semibold text-gray-700 dark:text-black mb-4">Scan to visit our website</p>
+										<img src="./qr-code.png" alt="QR Code to Manheim Lions Club website" class="w-64 h-64" onerror="this.style.display='none'" />
+										<p class="text-lg font-semibold text-gray-700 dark:text-black">manheimlions.org</p>
+									</div>
 								</div>
 							</div>
 						</div>
-					</section> -->
+					</section>
 				</div>
 			</main>
 
-			<!-- Payment Info (Bottom of page) -->
-			<section class="text-center mb-10 px-6">
-				<div class="max-w-4xl mx-auto">
-					<div class="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-md p-8 transition-colors duration-300">
-						<h3 class="text-4xl font-extrabold mb-5 text-gray-800 dark:text-white tracking-tight">Payment Options</h3>
-						<p class="text-2xl font-semibold mb-8 text-gray-700 dark:text-gray-100">We accept cash and card payments!</p>
-						<div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-							<PaymentOptionCard label="Cash" accentColor="#16a34a" accentClasses="border-green-500 dark:border-green-300" />
-							<PaymentOptionCard label="Credit" accentColor="#2563eb" accentClasses="border-blue-500 dark:border-blue-300" />
-							<PaymentOptionCard label="Debit" accentColor="#a855f7" accentClasses="border-purple-500 dark:border-purple-300" />
-						</div>
+			<!-- Payment Info (Floating above footer) -->
+			<section class="fixed bottom-20 left-0 right-0 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-t-2xl shadow-lg px-6 py-4 z-40 mx-4 my-4">
+				<div class="max-w-4xl mx-auto text-center">
+					<h3 class="text-2xl font-extrabold mb-3 text-gray-800 dark:text-white tracking-tight">Payment Options</h3>
+					<p class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-100">We accept cash and card payments!</p>
+					<div class="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
+						<PaymentOptionCard label="Cash" accentColor="#16a34a" accentClasses="border-green-500 dark:border-green-300" />
+						<PaymentOptionCard label="Card" accentColor="#2563eb" accentClasses="border-blue-500 dark:border-blue-300" />
 					</div>
 				</div>
 			</section>

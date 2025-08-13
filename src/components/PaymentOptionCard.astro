@@ -13,8 +13,8 @@ const {
 ---
 
 <div
-  style={`--card-accent: ${accentColor}`}
-  class={`relative overflow-hidden bg-white dark:bg-slate-900 rounded-2xl transition-shadow duration-300 -translate-y-1.5 shadow-xl border border-white/20 dark:border-white/10 border-l-4 ${accentClasses}`}
+  style={`--card-accent: ${accentColor}; border-color: ${accentColor};`}
+  class={`relative overflow-hidden bg-white dark:bg-slate-900 rounded-2xl transition-shadow duration-300 -translate-y-1.5 shadow-xl border-white/20 dark:border-white/10 border-2`}
 >
   <div class="p-8 flex items-center justify-center h-full">
     <div class="text-center font-black tracking-wide text-black dark:text-white text-3xl">{label}</div>
